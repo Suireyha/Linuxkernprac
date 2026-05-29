@@ -1,6 +1,7 @@
 	obj-m += helloKernel.o
 	obj-m += second.o
 	obj-m += kernsum.o
+	obj-m += elev.o
 
 PWD := $(CURDIR)
 
