@@ -33,7 +33,13 @@ module_param(dev_quantity, int, 0644);
 module_param(floor_qty, int, 0644);
 module_param(underground_qty, int, 0644);
 
-
+struct elevator_state{ //This is the 'local' data for each elevator device. We'll make an array of these later and index it with each devices minor number
+	int current_floor; //The current floor this elevator is on
+	bool service; //In service?
+	int time_since_service; //Number of simulation cycles since last service
+	//int queue[50];
+};
+static struct elevator_state *elevators; //The array of elevators, needs to be dynamic with #of devices
 
 static struct file_operations fops = {
 	.read = elevator_read,
@@ -44,6 +50,17 @@ static struct file_operations fops = {
 
 static int __init start(void){
 	pr_info("Device %s inserted\n", DEVICE_NAME);
+	elevators = kmalloc(sizeof(struct elevator_state) * dev_quantity, GFP_KERNEL); //Dynamic array size of device number argument
+	if(!elevators){ //kmalloc returned null </3
+		pr_err("Failted to allocate elevator state\n");
+		return -ENOMEM;
+	}
+	for(int i = 0; i < dev_quantity; i++){
+		elevators[i].current_floor = 0;
+		elevators[i].service = false;
+		elevators[i].time_since_service = 0;
+	}
+
 	int err;
 	if(major_number == 0){//User ddin't change pass a major_number to use or passed 0 (reserved by other shit)
 		err = alloc_chrdev_region(&dev_num, 0, dev_quantity, DEVICE_NAME);
@@ -95,32 +112,34 @@ static void __exit end(void){
 	}
 	class_destroy(cls);
 	unregister_chrdev_region(dev_num, dev_quantity);
+	kfree(elevators); //Free the memory for the array of elevator states
 }
 
 static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, loff_t *off){
-	pr_info("Elevator read called!");
+	int minor = iminor(filp->f_inode);
+	//pr_debug("%s%d: read %d\n", DEVICE_NAME, minor,);
 
 	return 0;
 }
 
 static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t len, loff_t *off){
-	pr_info("Elevator write called!");
+	int minor = iminor(filp->f_inode);
 
 	return 0;
 }
 
 static int elevator_open(struct inode *inode, struct file *filp){
-	pr_info("Elevator open called!");
-	pr_info("Number of Elevators: %d", dev_quantity);
-	pr_info("Total Floors: %d", floor_qty);
-	pr_info("Underground Floors: %d", underground_qty);
-	pr_info("Highest Floor: %d", (floor_qty - (1 + underground_qty)));
+	//pr_info("Elevator open called!");
+	//pr_info("Number of Elevators: %d", dev_quantity);
+	//pr_info("Total Floors: %d", floor_qty);
+	//pr_info("Underground Floors: %d", underground_qty);
+	//pr_info("Highest Floor: %d", (floor_qty - (1 + underground_qty)));
+	int minor = iminor(inode);
 	return 0;
 }
 
 static int elevator_release(struct inode *inode, struct file *filp){
-	pr_info("Elevator release called!");
-
+	int minor = iminor(inode); //Get the minr number
 	return 0;
 }
 
