@@ -19,6 +19,7 @@ static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t 
 static int elevator_open(struct inode *inode, struct file *filp);
 static int elevator_release(struct inode *inode, struct file *filp);
 
+static struct cdev elevator_cdev
 static dev_t dev_num; //ACTUAL Major & Minor
 static struct class *cls;
 
@@ -69,20 +70,20 @@ static int __init start(void){
 		device_create(cls, NULL, MKDEV(MAJOR(dev_num), i), NULL, "elevator%d", i);
 		pr_info("Created elevator%d!", i);
 	}
-
+	cdev_init(&elevator_cdev, &fops); //Set up the cdev struct to encapsulate fops
+	cdev_add(&elevator_cdev, dev_num, dev_quantity); //Tell the kernel that fops exists and we can use its functions basically
 	return 0;
 }
 
 
 static void __exit end(void){
-
+	cdev_del(&elevator_cdev);
 	for(int i = 0; i < dev_quantity; i++){
 		device_destroy(cls, MKDEV(MAJOR(dev_num), i));
 	}
 	class_destroy(cls);
 	unregister_chrdev_region(dev_num, dev_quantity);
 	pr_info("Elevator module unloaded!!\n");
-
 }
 
 static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, loff_t *off){
