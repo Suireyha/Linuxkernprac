@@ -100,7 +100,10 @@ static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t 
 
 static int elevator_open(struct inode *inode, struct file *filp){
 	pr_info("Elevator open called!");
-
+	pr_info("Number of Elevators: %d", dev_quantity);
+	pr_info("Total Floors: %d" floor_qty);
+	pr_info("Underground Floors: %d", underground_qty);
+	pr_info("Highest Floor: %d", (floor_qty - (1 + underground_qty)));
 	return 0;
 }
 
