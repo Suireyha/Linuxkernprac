@@ -19,7 +19,7 @@ static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t 
 static int elevator_open(struct inode *inode, struct file *filp);
 static int elevator_release(struct inode *inode, struct file *filp);
 
-static struct cdev elevator_cdev
+static struct cdev elevator_cdev;
 static dev_t dev_num; //ACTUAL Major & Minor
 static struct class *cls;
 
