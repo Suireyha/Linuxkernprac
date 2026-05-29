@@ -81,8 +81,32 @@ static void __exit end(void){
 	}
 	class_destroy(cls);
 	unregister_chrdev_region(dev_num, dev_quantity);
-	pr_info("Elevator module gracefully unloaded\n");
+	pr_info("Elevator module unloaded!!\n");
 
+}
+
+static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, loff_t *off){
+	pr_info("Elevator read called!");
+
+	return 0;
+}
+
+static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t len, loff_t *off){
+	pr_info("Elevator write called!");
+
+	return 0;
+}
+
+static int elevator_open(struct inode *inode, struct file *filp){
+	pr_info("Elevator open called!");
+
+	return 0;
+}
+
+static int elevator_release(struct inode *inode, struct file *filp){
+	pr_info("Elevator release called!");
+
+	return 0;
 }
 
 module_init(start);
