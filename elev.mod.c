@@ -18,13 +18,13 @@ __section(".gnu.linkonce.this_module") = {
 
 static const struct modversion_info ____versions[]
 __used __section("__versions") = {
-	{ 0xd5f66efd, "cdev_init" },
-	{ 0x8ea73856, "cdev_add" },
-	{ 0xc5bd6261, "register_chrdev_region" },
-	{ 0x0bc5fb0d, "unregister_chrdev_region" },
-	{ 0x4e54d6ac, "cdev_del" },
 	{ 0x1595e410, "device_destroy" },
 	{ 0xa1dacb42, "class_destroy" },
+	{ 0x0bc5fb0d, "unregister_chrdev_region" },
+	{ 0xc5bd6261, "register_chrdev_region" },
+	{ 0xd5f66efd, "cdev_init" },
+	{ 0x8ea73856, "cdev_add" },
+	{ 0x4e54d6ac, "cdev_del" },
 	{ 0x0040afbe, "param_ops_int" },
 	{ 0xd272d446, "__fentry__" },
 	{ 0xe8213e80, "_printk" },
@@ -37,13 +37,13 @@ __used __section("__versions") = {
 
 static const u32 ____version_ext_crcs[]
 __used __section("__version_ext_crcs") = {
-	0xd5f66efd,
-	0x8ea73856,
-	0xc5bd6261,
-	0x0bc5fb0d,
-	0x4e54d6ac,
 	0x1595e410,
 	0xa1dacb42,
+	0x0bc5fb0d,
+	0xc5bd6261,
+	0xd5f66efd,
+	0x8ea73856,
+	0x4e54d6ac,
 	0x0040afbe,
 	0xd272d446,
 	0xe8213e80,
@@ -55,13 +55,13 @@ __used __section("__version_ext_crcs") = {
 };
 static const char ____version_ext_names[]
 __used __section("__version_ext_names") =
-	"cdev_init\0"
-	"cdev_add\0"
-	"register_chrdev_region\0"
-	"unregister_chrdev_region\0"
-	"cdev_del\0"
 	"device_destroy\0"
 	"class_destroy\0"
+	"unregister_chrdev_region\0"
+	"register_chrdev_region\0"
+	"cdev_init\0"
+	"cdev_add\0"
+	"cdev_del\0"
 	"param_ops_int\0"
 	"__fentry__\0"
 	"_printk\0"
@@ -75,4 +75,4 @@ __used __section("__version_ext_names") =
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "ACD9F4868EF3F36F04542E7");
+MODULE_INFO(srcversion, "B9F2BB3A7A8BCE197CCF56F");
