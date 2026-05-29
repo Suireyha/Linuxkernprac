@@ -14,10 +14,10 @@
 MODULE_LICENSE("GPL"); //Public license to use everything
 
 //Function signatures for fops stuff =]
-ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, loff_t *off);
-ssize_t elevator_write(struct file *filp, const char __user *buf, size_t len, loff_t *off);
-int elevator_open(struct inode *inode, struct file *filp);
-int elevator_release(struct inode *inode, struct file *filp);
+static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, loff_t *off);
+static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t len, loff_t *off);
+static int elevator_open(struct inode *inode, struct file *filp);
+static int elevator_release(struct inode *inode, struct file *filp);
 
 static dev_t dev_num; //ACTUAL Major & Minor
 static struct class *cls;
@@ -63,7 +63,7 @@ static int __init start(void){
 		return PTR_ERR(cls);
 	}
 
-	pr_info("GOT MAJOR:\T%d", MAJOR(dev_num));
+	pr_info("GOT MAJOR: %d", MAJOR(dev_num));
 
 	for(int i = 0; i < dev_quantity; i++){ //Create as many elevator devices as specified
 		device_create(cls, NULL, MKDEV(MAJOR(dev_num), i), NULL, "elevator%d", i);
@@ -81,6 +81,7 @@ static void __exit end(void){
 	}
 	class_destroy(cls);
 	unregister_chrdev_region(dev_num, dev_quantity);
+	pr_info("Elevator module gracefully unloaded\n");
 
 }
 

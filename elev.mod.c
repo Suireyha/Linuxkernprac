@@ -1,0 +1,69 @@
+#include <linux/module.h>
+#include <linux/export-internal.h>
+#include <linux/compiler.h>
+
+MODULE_INFO(name, KBUILD_MODNAME);
+
+__visible struct module __this_module
+__section(".gnu.linkonce.this_module") = {
+	.name = KBUILD_MODNAME,
+	.init = init_module,
+#ifdef CONFIG_MODULE_UNLOAD
+	.exit = cleanup_module,
+#endif
+	.arch = MODULE_ARCH_INIT,
+};
+
+
+
+static const struct modversion_info ____versions[]
+__used __section("__versions") = {
+	{ 0x653aa194, "class_create" },
+	{ 0xe8213e80, "_printk" },
+	{ 0xe486c4b7, "device_create" },
+	{ 0xd272d446, "__x86_return_thunk" },
+	{ 0xc5bd6261, "register_chrdev_region" },
+	{ 0x0bc5fb0d, "unregister_chrdev_region" },
+	{ 0x1595e410, "device_destroy" },
+	{ 0xa1dacb42, "class_destroy" },
+	{ 0x0040afbe, "param_ops_int" },
+	{ 0xd272d446, "__fentry__" },
+	{ 0x9f222e1e, "alloc_chrdev_region" },
+	{ 0xbebe66ff, "module_layout" },
+};
+
+static const u32 ____version_ext_crcs[]
+__used __section("__version_ext_crcs") = {
+	0x653aa194,
+	0xe8213e80,
+	0xe486c4b7,
+	0xd272d446,
+	0xc5bd6261,
+	0x0bc5fb0d,
+	0x1595e410,
+	0xa1dacb42,
+	0x0040afbe,
+	0xd272d446,
+	0x9f222e1e,
+	0xbebe66ff,
+};
+static const char ____version_ext_names[]
+__used __section("__version_ext_names") =
+	"class_create\0"
+	"_printk\0"
+	"device_create\0"
+	"__x86_return_thunk\0"
+	"register_chrdev_region\0"
+	"unregister_chrdev_region\0"
+	"device_destroy\0"
+	"class_destroy\0"
+	"param_ops_int\0"
+	"__fentry__\0"
+	"alloc_chrdev_region\0"
+	"module_layout\0"
+;
+
+MODULE_INFO(depends, "");
+
+
+MODULE_INFO(srcversion, "A466AFF9D159EF677CEE237");
