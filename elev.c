@@ -44,7 +44,7 @@ static struct file_operations fops = {
 static int __init start(void){
 	int err;
 	if(major_number == 0){//User ddin't change pass a major_number to use or passed 0 (reserved by other shit)
-		 err = alloc_chrdev_region(&dev_num, 0, dev_quantity, DRIVER_NAME);
+		err = alloc_chrdev_region(&dev_num, 0, dev_quantity, DRIVER_NAME);
 	}
 	else{
 		dev_num = MKDEV(major_number, 0);
@@ -63,8 +63,11 @@ static int __init start(void){
 		return PTR_ERR(cls);
 	}
 
+	pr_info("GOT MAJOR:\T%d", MAJOR(dev_num));
+
 	for(int i = 0; i < dev_quantity; i++){ //Create as many elevator devices as specified
 		device_create(cls, NULL, MKDEV(MAJOR(dev_num), i), NULL, "elevator%d", i);
+		pr_info("Created elevator%d!", i);
 	}
 
 	return 0;
