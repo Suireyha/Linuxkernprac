@@ -23,6 +23,8 @@ static struct cdev elevator_cdev;
 static dev_t dev_num; //ACTUAL Major & Minor
 static struct class *cls;
 
+//static int time = 0; //For the time steps and timesinceserver in each elevator state
+
 static int major_number = 0; //This drivers major number assigned by user (basically an ID)
 static int dev_quantity = 4; //Number of elevators
 static int floor_qty = 10; //The TOTAL number of floors (including underground floors)
@@ -37,7 +39,8 @@ struct elevator_state{ //This is the 'local' data for each elevator device. We'l
 	int current_floor; //The current floor this elevator is on
 	bool service; //In service?
 	int time_since_service; //Number of simulation cycles since last service
-	//int queue[50];
+	int queue[50]; //50 is low key arbitrary idk what to make it reasonably but you can BET I'm not making this shit dynamic
+	int q_size; //How many things are ACTUALLY on the queue
 };
 static struct elevator_state *elevators; //The array of elevators, needs to be dynamic with #of devices
 
@@ -49,6 +52,8 @@ static struct file_operations fops = {
 };
 
 static int __init start(void){
+	int err;
+	int cderr;
 	pr_info("Device %s inserted\n", DEVICE_NAME);
 	elevators = kmalloc(sizeof(struct elevator_state) * dev_quantity, GFP_KERNEL); //Dynamic array size of device number argument
 	if(!elevators){ //kmalloc returned null </3
@@ -59,9 +64,8 @@ static int __init start(void){
 		elevators[i].current_floor = 0;
 		elevators[i].service = false;
 		elevators[i].time_since_service = 0;
+		elevators[i].q_size = 0; //QUeue curor
 	}
-
-	int err;
 	if(major_number == 0){//User ddin't change pass a major_number to use or passed 0 (reserved by other shit)
 		err = alloc_chrdev_region(&dev_num, 0, dev_quantity, DEVICE_NAME);
 	}
@@ -72,6 +76,7 @@ static int __init start(void){
 
 	if(err < 0){
 		pr_err("Failed to allocate chrdev region!\n");
+		kfree(elevators);
 		return err;
 	}
 
@@ -79,6 +84,7 @@ static int __init start(void){
 	if(IS_ERR(cls)){
 		pr_err("Failed to create class for elevator!\n");
 		unregister_chrdev_region(dev_num, dev_quantity);
+		kfree(elevators);
 		return PTR_ERR(cls);
 	}
 
@@ -94,12 +100,23 @@ static int __init start(void){
 			}
 			class_destroy(cls);
 			unregister_chrdev_region(dev_num, dev_quantity);
+			kfree(elevators);
 			return PTR_ERR(derr);
 		}
 		pr_info("Created elevator%d!", i);
 	}
 	cdev_init(&elevator_cdev, &fops); //Set up the cdev struct to encapsulate fops
-	cdev_add(&elevator_cdev, dev_num, dev_quantity); //Tell the kernel that fops exists and we can use its functions basically
+	cderr = cdev_add(&elevator_cdev, dev_num, dev_quantity); //Tell the kernel that fops exists and we can use its functions basically
+	if (cderr < 0) { //I am becoming unspeakably sick of this error catching bullshit there must be a more efficient way dwag :(
+		pr_err("Failed to add cdev\n");
+		for (int i = 0; i < dev_quantity; i++) {
+			device_destroy(cls, MKDEV(MAJOR(dev_num), i));
+		}
+		class_destroy(cls);
+		unregister_chrdev_region(dev_num, dev_quantity);
+		kfree(elevators);
+		return -1;
+	}
 	return 0;
 }
 
@@ -117,29 +134,42 @@ static void __exit end(void){
 
 static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, loff_t *off){
 	int minor = iminor(filp->f_inode);
-	//pr_debug("%s%d: read %d\n", DEVICE_NAME, minor,);
+	struct elevator_state *this_elevator = &elevators[minor];
+	char floor;
+	
+	if(*off > 0) return 0;
+	if(len < 1) return 0; //User asked for zero bytes
+	this_elevator->time_since_service++; //Increment the simulation time
+	
+	//Simulation loop goes here
 
-	return 0;
+	floor = (char)this_elevator->current_floor; //Get the current floor
+	if(copy_to_user(buf, &floor, 1)){ //Put the current floor of this device in the buffer for the user to read
+		pr_info("%s%d Failed copy in read\n", DEVICE_NAME, minor);
+		return -EFAULT;
+	}
+	*off += 1; //Move the cursor along
+	pr_debug("%s%d: read %d\n", DEVICE_NAME, minor, floor);
+	return 1; //oine byte at a time
 }
 
 static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t len, loff_t *off){
-	int minor = iminor(filp->f_inode);
+	//int minor = iminor(filp->f_inode);
+	//struct elevator_state *this_elevator = &elevators[minor];
 
-	return 0;
+	return len;
 }
 
 static int elevator_open(struct inode *inode, struct file *filp){
-	//pr_info("Elevator open called!");
-	//pr_info("Number of Elevators: %d", dev_quantity);
-	//pr_info("Total Floors: %d", floor_qty);
-	//pr_info("Underground Floors: %d", underground_qty);
-	//pr_info("Highest Floor: %d", (floor_qty - (1 + underground_qty)));
-	int minor = iminor(inode);
+	//int minor = iminor(inode);
+	//struct elevator_state *this_elevator = &elevators[minor];
+
 	return 0;
 }
 
 static int elevator_release(struct inode *inode, struct file *filp){
-	int minor = iminor(inode); //Get the minr number
+	//int minor = iminor(inode); //Get the minr number
+	//struct elevator_state *this_elevator = &elevators[minor];
 	return 0;
 }
 
