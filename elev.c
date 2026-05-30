@@ -100,7 +100,8 @@ static int __init start(void){
 		struct device *derr;
 		derr = device_create(cls, NULL, MKDEV(MAJOR(dev_num), i), NULL, "elevator%d", i);
 		if(IS_ERR(derr)){
-			pr_err("Error adding device %s%d\n", DEVICE_NAME, i);
+			//Since we're making devices in order of i I'm pretty sure i will always be the correct minor number for the one that failed
+			pr_err("Error adding device %s%d\n", DEVICE_NAME, i); //Assignment failed device instance initialisation log thing :fire:
 			for(int x = 0; x < i; x++){ //HAS TO BE IN REVERSE ORDER!!! NO X=I X!=0 X-- BS
 				device_destroy(cls, MKDEV(MAJOR(dev_num), x));
 			}
@@ -130,11 +131,11 @@ static int __init start(void){
 static void __exit end(void){
 	pr_info("Device %s removed\n", DEVICE_NAME);
 	cdev_del(&elevator_cdev);
-	for(int i = 0; i < dev_quantity; i++){
+	for(int i = 0; i < dev_quantity; i++){ //Remove all the devices
 		device_destroy(cls, MKDEV(MAJOR(dev_num), i));
 	}
-	class_destroy(cls);
-	unregister_chrdev_region(dev_num, dev_quantity);
+	class_destroy(cls); //Destroy the class struct
+	unregister_chrdev_region(dev_num, dev_quantity); //Tell the kernel the driver is gone
 	kfree(elevators); //Free the memory for the array of elevator states
 }
 
@@ -176,7 +177,7 @@ static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, lo
 		return -EFAULT;
 	}
 	*off += 1; //Move the cursor along
-	pr_debug("%s%d: read %d\n", DEVICE_NAME, minor, floor);
+	pr_debug("%s%d: read %d\n", DEVICE_NAME, minor, floor); //Read call log
 	return 1; //oine byte at a time
 }
 
@@ -191,7 +192,7 @@ static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t 
 	//*buf is a user space pointer so we can't dereference it directly from within the kernel,
 	//we have to go through copy_from_user(). ibuf is for all intents and purposes the uinput buffer
 	if(copy_from_user(ibuf, buf, to_cpy)){
-		pr_info("%s%d Failecd to copy input buffer in write\n", DEVICE_NAME, minor);
+		pr_info("%s%d Failed copy in write\n", DEVICE_NAME, minor);
 		return -EFAULT;
 	}
 	
@@ -211,7 +212,7 @@ static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t 
 			}
 		}
 	}
-
+	pr_debug("%s%d: write %d\n", DEVICE_NAME, minor, floor); //Write call log
 	return to_cpy; //Returns the number of bytes written, and anything more than ibuf lenmgth 64 will be ignored. Lucky us we already have this numebr at the top
 }
 
@@ -249,12 +250,12 @@ static long elevator_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 			ret_len = snprintf(ret_str, sizeof(ret_str), "Current Floor: %d\tIn Service: %d\tTime Since Last Service: %d\t Number of Requests: %d\n", this_elevator->current_floor, this_elevator->service, this_elevator->time_since_service, this_elevator->q_size);
 			//Write ret_str to the userspace buffer arg, if it fails print an error
 			if(copy_to_user((char __user *)arg, ret_str, ret_len + 1)){//+1 for null term
-				pr_info("%s%d Failed to copy return string to user buffer in IOCTL get state case\n", DEVICE_NAME, minor);
+				pr_info("%s%d Failed copy in IOCTL\n", DEVICE_NAME, minor);
 				return -EFAULT;
 			}
 			return 0;
 		default:
-			//Bad command- not sure if the bad copy was supposed to do pr_notice too but I think it's chill
+			//Bad command- invalid IOCTL notice #assignmentSpecification :fire: #I'veBeenAwakeForTooLong
 			pr_notice("%s%d: Invalid IOCTL cmd %d\n", DEVICE_NAME, minor, cmd);
 			return -ENOTTY;
     }
