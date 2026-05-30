@@ -18,6 +18,8 @@ __section(".gnu.linkonce.this_module") = {
 
 static const struct modversion_info ____versions[]
 __used __section("__versions") = {
+	{ 0xe8213e80, "_printk" },
+	{ 0x90a48d82, "__ubsan_handle_out_of_bounds" },
 	{ 0xd272d446, "__stack_chk_fail" },
 	{ 0xd710adbf, "__kmalloc_noprof" },
 	{ 0xc5bd6261, "register_chrdev_region" },
@@ -31,18 +33,23 @@ __used __section("__versions") = {
 	{ 0xd5f66efd, "cdev_init" },
 	{ 0x8ea73856, "cdev_add" },
 	{ 0x4e54d6ac, "cdev_del" },
+	{ 0x092a35a2, "_copy_to_user" },
+	{ 0x23f25c0a, "__dynamic_pr_debug" },
+	{ 0xe4de56b4, "__ubsan_handle_load_invalid_value" },
 	{ 0x0040afbe, "param_ops_int" },
 	{ 0xd272d446, "__fentry__" },
 	{ 0xd272d446, "__x86_return_thunk" },
 	{ 0xbd03ed67, "__ref_stack_chk_guard" },
-	{ 0x092a35a2, "_copy_to_user" },
-	{ 0x23f25c0a, "__dynamic_pr_debug" },
-	{ 0xe8213e80, "_printk" },
+	{ 0x546c19d9, "validate_usercopy_range" },
+	{ 0xa61fd7aa, "__check_object_size" },
+	{ 0x092a35a2, "_copy_from_user" },
 	{ 0xbebe66ff, "module_layout" },
 };
 
 static const u32 ____version_ext_crcs[]
 __used __section("__version_ext_crcs") = {
+	0xe8213e80,
+	0x90a48d82,
 	0xd272d446,
 	0xd710adbf,
 	0xc5bd6261,
@@ -56,17 +63,22 @@ __used __section("__version_ext_crcs") = {
 	0xd5f66efd,
 	0x8ea73856,
 	0x4e54d6ac,
+	0x092a35a2,
+	0x23f25c0a,
+	0xe4de56b4,
 	0x0040afbe,
 	0xd272d446,
 	0xd272d446,
 	0xbd03ed67,
+	0x546c19d9,
+	0xa61fd7aa,
 	0x092a35a2,
-	0x23f25c0a,
-	0xe8213e80,
 	0xbebe66ff,
 };
 static const char ____version_ext_names[]
 __used __section("__version_ext_names") =
+	"_printk\0"
+	"__ubsan_handle_out_of_bounds\0"
 	"__stack_chk_fail\0"
 	"__kmalloc_noprof\0"
 	"register_chrdev_region\0"
@@ -80,17 +92,20 @@ __used __section("__version_ext_names") =
 	"cdev_init\0"
 	"cdev_add\0"
 	"cdev_del\0"
+	"_copy_to_user\0"
+	"__dynamic_pr_debug\0"
+	"__ubsan_handle_load_invalid_value\0"
 	"param_ops_int\0"
 	"__fentry__\0"
 	"__x86_return_thunk\0"
 	"__ref_stack_chk_guard\0"
-	"_copy_to_user\0"
-	"__dynamic_pr_debug\0"
-	"_printk\0"
+	"validate_usercopy_range\0"
+	"__check_object_size\0"
+	"_copy_from_user\0"
 	"module_layout\0"
 ;
 
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "3989EA3CF003A76EFC7BAA6");
+MODULE_INFO(srcversion, "19A4AB92F812419C704A7C6");

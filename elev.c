@@ -11,6 +11,9 @@
 //#include <linux/.h>
 #define DEVICE_NAME "elevator"
 #define MAX_QUEUE_LENGTH 100
+#define IOCTL_MN 0x5b //Magic number fo the IO control stuff outlined by the spec
+#define IOCTL_TOGGLE_SERVICE _IO(IOCTL_MN, 0) //cmd = 0 is for toggle service so if cmd = 0 then toggle service
+#define IOCTL_GET_STATE _IOR(IOCTL_MN, 1, char[200]) //200 length string for the return buffer, command ID is basically 1 so if cmd = 1 to this
 
 MODULE_LICENSE("GPL"); //Public license to use everything
 
@@ -19,6 +22,7 @@ static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, lo
 static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t len, loff_t *off);
 static int elevator_open(struct inode *inode, struct file *filp);
 static int elevator_release(struct inode *inode, struct file *filp);
+static long elevator_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 
 static struct cdev elevator_cdev;
 static dev_t dev_num; //ACTUAL Major & Minor
@@ -50,6 +54,7 @@ static struct file_operations fops = {
 	.write = elevator_write,
 	.open = elevator_open,
 	.release = elevator_release,
+	.unlocked_ioctl = elevator_ioctl,
 };
 
 static int __init start(void){
@@ -164,9 +169,6 @@ static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, lo
 		}
 	}
 
-	
-
-
 	floor = (char)this_elevator->current_floor; //Get the current floor
 	//Can't ACTUALLY just write to the *buf since it's in the user space so we have to use this ugly function
 	if(copy_to_user(buf, &floor, 1)){ //Put the current floor of this device in the buffer for the user to read
@@ -224,6 +226,38 @@ static int elevator_release(struct inode *inode, struct file *filp){
 	//int minor = iminor(inode); //Get the minr number
 	//struct elevator_state *this_elevator = &elevators[minor];
 	return 0;
+}
+
+static long elevator_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
+    int minor = iminor(filp->f_inode);
+    struct elevator_state *this_elevator = &elevators[minor];
+	char ret_str[200];
+	int ret_len;
+    
+    switch (cmd) {
+		case IOCTL_TOGGLE_SERVICE:
+			if(this_elevator->service){//If already turned off
+				this_elevator->service = false; //Turn the elevator back on
+			}
+			else{
+				this_elevator->service = true; //Turn the elevator off
+				this_elevator->q_size = 0; //Don't have to "delete" the queue, it'll all get overwritten anyways and is inaccessable
+			}
+			return 0;
+		case IOCTL_GET_STATE:
+			//Make the return string in ret_str and store it's length in ret_len
+			ret_len = snprintf(ret_str, sizeof(ret_str), "Current Floor: %d\tIn Service: %d\tTime Since Last Service: %d\t Number of Requests: %d\n", this_elevator->current_floor, this_elevator->service, this_elevator->time_since_service, this_elevator->q_size);
+			//Write ret_str to the userspace buffer arg, if it fails print an error
+			if(copy_to_user((char __user *)arg, ret_str, ret_len + 1)){//+1 for null term
+				pr_info("%s%d Failed to copy return string to user buffer in IOCTL get state case\n", DEVICE_NAME, minor);
+				return -EFAULT;
+			}
+			return 0;
+		default:
+			//Bad command- not sure if the bad copy was supposed to do pr_notice too but I think it's chill
+			pr_notice("%s%d: Invalid IOCTL cmd %d\n", DEVICE_NAME, minor, cmd);
+			return -ENOTTY;
+    }
 }
 
 module_init(start);
