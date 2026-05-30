@@ -10,6 +10,7 @@
 //#include <linux/.h>
 //#include <linux/.h>
 #define DEVICE_NAME "elevator"
+#define MAX_QUEUE_LENGTH 100
 
 MODULE_LICENSE("GPL"); //Public license to use everything
 
@@ -39,7 +40,7 @@ struct elevator_state{ //This is the 'local' data for each elevator device. We'l
 	int current_floor; //The current floor this elevator is on
 	bool service; //In service?
 	int time_since_service; //Number of simulation cycles since last service
-	int queue[50]; //50 is low key arbitrary idk what to make it reasonably but you can BET I'm not making this shit dynamic
+	int queue[MAX_QUEUE_LENGTH]; //50 is low key arbitrary idk what to make it reasonably but you can BET I'm not making this shit dynamic
 	int q_size; //How many things are ACTUALLY on the queue
 };
 static struct elevator_state *elevators; //The array of elevators, needs to be dynamic with #of devices
@@ -88,7 +89,7 @@ static int __init start(void){
 		return PTR_ERR(cls);
 	}
 
-	pr_info("GOT MAJOR: %d", MAJOR(dev_num));
+	pr_info("GOT MAJOR: %d\n", MAJOR(dev_num));
 
 	for(int i = 0; i < dev_quantity; i++){ //Create as many elevator devices as specified
 		struct device *derr;
@@ -139,11 +140,35 @@ static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, lo
 	
 	if(*off > 0) return 0;
 	if(len < 1) return 0; //User asked for zero bytes
-	this_elevator->time_since_service++; //Increment the simulation time
-	
+
 	//Simulation loop goes here
+	this_elevator->time_since_service++; //Increment the simulation time
+	if(!this_elevator->service && this_elevator->q_size > 0){ //Only move if the elevator is on (not in service)
+		if(this_elevator->current_floor == this_elevator->queue[0]){ //Serve the floor then pop the request off
+			pr_info("%s%d: Serviced level %d\n", DEVICE_NAME, minor, this_elevator->current_floor);
+			this_elevator->time_since_service = 0;
+			for(int i = 0; i < this_elevator->q_size - 1; i++){ //Shift everything down
+				this_elevator->queue[i] = this_elevator->queue[i+1];
+			}
+			this_elevator->q_size--; //Move the cursor down
+		}
+		else{ //Move up or down towards the floor at the front of the queue and log it
+			if(this_elevator->current_floor < this_elevator->queue[0]){
+				this_elevator->current_floor++;
+				pr_info("%s%d moved %d->%d\n", DEVICE_NAME, minor, this_elevator->current_floor - 1, this_elevator->current_floor);
+			}
+			else{
+				this_elevator->current_floor--;
+				pr_info("%s%d moved %d->%d\n", DEVICE_NAME, minor, this_elevator->current_floor + 1, this_elevator->current_floor);
+			} 
+		}
+	}
+
+	
+
 
 	floor = (char)this_elevator->current_floor; //Get the current floor
+	//Can't ACTUALLY just write to the *buf since it's in the user space so we have to use this ugly function
 	if(copy_to_user(buf, &floor, 1)){ //Put the current floor of this device in the buffer for the user to read
 		pr_info("%s%d Failed copy in read\n", DEVICE_NAME, minor);
 		return -EFAULT;
@@ -154,10 +179,38 @@ static ssize_t elevator_read(struct file *filp, char __user *buf, size_t len, lo
 }
 
 static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t len, loff_t *off){
-	//int minor = iminor(filp->f_inode);
-	//struct elevator_state *this_elevator = &elevators[minor];
+	int minor = iminor(filp->f_inode);
+	struct elevator_state *this_elevator = &elevators[minor];
+	bool in_queue = false;
+	signed char floor = 0;
+	char ibuf[64]; //Copy of the *buf
+	size_t to_cpy = min(len, sizeof(ibuf));
 
-	return len;
+	//*buf is a user space pointer so we can't dereference it directly from within the kernel,
+	//we have to go through copy_from_user(). ibuf is for all intents and purposes the uinput buffer
+	if(copy_from_user(ibuf, buf, to_cpy)){
+		pr_info("%s%d Failecd to copy input buffer in write\n", DEVICE_NAME, minor);
+		return -EFAULT;
+	}
+	
+	for(int i = 0; i < to_cpy; i++){
+		in_queue = false;
+		floor = ibuf[i];
+		if(((signed int)floor > (floor_qty - (1 + underground_qty))) || (signed int)floor < (-1*underground_qty)){
+			pr_info("Error: Invalid floor number written to elevator%d\n", minor);
+		}
+		else{
+			for(int x = 0; x < this_elevator->q_size; x++){
+				if((signed int)floor == this_elevator->queue[x]) in_queue = true;
+			}
+			if(!in_queue && this_elevator->q_size < MAX_QUEUE_LENGTH){
+				this_elevator->queue[this_elevator->q_size] = (signed int)floor; //Add the requested floor to the queue
+				this_elevator->q_size++; //Increment the q_size so that it matches next free index
+			}
+		}
+	}
+
+	return to_cpy; //Returns the number of bytes written, and anything more than ibuf lenmgth 64 will be ignored. Lucky us we already have this numebr at the top
 }
 
 static int elevator_open(struct inode *inode, struct file *filp){
