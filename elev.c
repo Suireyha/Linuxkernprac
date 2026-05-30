@@ -63,7 +63,7 @@ static int __init start(void){
 	pr_info("Device %s inserted\n", DEVICE_NAME);
 	elevators = kmalloc(sizeof(struct elevator_state) * dev_quantity, GFP_KERNEL); //Dynamic array size of device number argument
 	if(!elevators){ //kmalloc returned null </3
-		pr_err("Failted to allocate elevator state\n");
+		pr_err("Failed to allocate elevator state\n");
 		return -ENOMEM;
 	}
 	for(int i = 0; i < dev_quantity; i++){
@@ -94,7 +94,7 @@ static int __init start(void){
 		return PTR_ERR(cls);
 	}
 
-	pr_info("GOT MAJOR: %d\n", MAJOR(dev_num));
+	pr_info("Elevator Driver Major Number: %d\n", MAJOR(dev_num));
 
 	for(int i = 0; i < dev_quantity; i++){ //Create as many elevator devices as specified
 		struct device *derr;
@@ -110,7 +110,6 @@ static int __init start(void){
 			kfree(elevators);
 			return PTR_ERR(derr);
 		}
-		pr_info("Created elevator%d!", i);
 	}
 	cdev_init(&elevator_cdev, &fops); //Set up the cdev struct to encapsulate fops
 	cderr = cdev_add(&elevator_cdev, dev_num, dev_quantity); //Tell the kernel that fops exists and we can use its functions basically
@@ -199,6 +198,7 @@ static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t 
 	for(int i = 0; i < to_cpy; i++){
 		in_queue = false;
 		floor = ibuf[i];
+		pr_debug("%s%d: write %d\n", DEVICE_NAME, minor, floor); //Write call log
 		if(((signed int)floor > (floor_qty - (1 + underground_qty))) || (signed int)floor < (-1*underground_qty)){
 			pr_info("Error: Invalid floor number written to elevator%d\n", minor);
 		}
@@ -212,7 +212,6 @@ static ssize_t elevator_write(struct file *filp, const char __user *buf, size_t 
 			}
 		}
 	}
-	pr_debug("%s%d: write %d\n", DEVICE_NAME, minor, floor); //Write call log
 	return to_cpy; //Returns the number of bytes written, and anything more than ibuf lenmgth 64 will be ignored. Lucky us we already have this numebr at the top
 }
 
